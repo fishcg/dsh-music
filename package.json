@@ -1,0 +1,56 @@
+{
+  "name": "@fishcg/dsh-acgay-player",
+  "version": "0.2.0",
+  "private": false,
+  "type": "module",
+  "description": "Embed acgay.cn in a DSH side drawer with search, optional auto-import, and a top mini player.",
+  "main": "index.js",
+  "icon": "icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "assets",
+    "scripts",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "acgay",
+    "music",
+    "player"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fishcg/dsh-acgay-player.git"
+  },
+  "homepage": "https://github.com/fishcg/dsh-acgay-player#readme",
+  "bugs": {
+    "url": "https://github.com/fishcg/dsh-acgay-player/issues"
+  }
+}
