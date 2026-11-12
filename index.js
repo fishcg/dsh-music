@@ -1,5 +1,5 @@
 /**
- * dsh-acgay-player — Host half.
+ * dsh-music — Host half.
  *
  * Starts a loopback HTTP proxy to https://www.acgay.cn so the Client half can
  * embed the real site in an iframe (the production site sends
@@ -22,7 +22,7 @@ const PACKAGE_ROOT = path.dirname(fileURLToPath(import.meta.url))
 const BRIDGE_FILE = path.join(PACKAGE_ROOT, 'assets', 'bridge.js')
 
 const UPSTREAM = 'https://www.acgay.cn'
-const ROUTE_BASE = '/dsh-acgay-player'
+const ROUTE_BASE = '/dsh-music'
 const STATE_ROUTE = `${ROUTE_BASE}/state`
 const IMPORT_ROUTE = `${ROUTE_BASE}/import`
 const VERSION = '0.2.0'
@@ -455,6 +455,6 @@ export function apply(root, config = {}) {
 }
 
 export default {
-  name: 'dsh-acgay-player',
+  name: 'dsh-music',
   apply,
 }

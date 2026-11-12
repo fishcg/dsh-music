@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@fishcg/dsh-acgay-player',
+  id: 'dsh-music',
   factory(require) {
     const React = require('react')
     const ReactDOM = require('react-dom')
@@ -7,8 +7,8 @@ window.__ModuleLoader__.load({
     const { useEffect, useMemo, useRef, useState } = React
 
     const NS = 'acgay-player'
-    const STYLE_ID = 'dsh-acgay-player-css'
-    const PANEL_ID = 'acgay-player'
+    const STYLE_ID = 'dsh-music-css'
+    const PANEL_ID = 'dsh-music'
     const SOURCE = 'dsh-acgay'
     const DEFAULT_PATH = '/category/music?dsh=1'
     const MAX_RESULTS = 30
@@ -776,7 +776,7 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         let cancelled = false
-        fetch('/dsh-acgay-player/state', { credentials: 'same-origin' })
+        fetch('/dsh-music/state', { credentials: 'same-origin' })
           .then(async (response) => {
             const data = await response.json().catch(() => ({}))
             if (!response.ok || !data || data.ok !== true) {
@@ -1009,7 +1009,7 @@ window.__ModuleLoader__.load({
         setImportBusy(true)
         setSearchError('')
         try {
-          const response = await fetch('/dsh-acgay-player/import', {
+          const response = await fetch('/dsh-music/import', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'content-type': 'application/json' },
@@ -1043,7 +1043,7 @@ window.__ModuleLoader__.load({
         setBiliImport(item.bvid)
         setSearchError('')
         try {
-          const response = await fetch('/dsh-acgay-player/import', {
+          const response = await fetch('/dsh-music/import', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'content-type': 'application/json' },

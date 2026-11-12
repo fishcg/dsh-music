@@ -1,4 +1,4 @@
-# dsh-acgay-player
+# dsh-music
 
 A DeepSeek Harness (DSH) plugin that embeds the online [acgay.cn](https://www.acgay.cn) music site in a right-side drawer, with an optional import path for missing tracks.
 
@@ -26,11 +26,11 @@ Add the package to the DSH profile and patch the profile:
 // ~/.dsh/profiles/desktop/package.json
 {
   "dependencies": {
-    "@fishcg/dsh-acgay-player": "link:/absolute/path/to/dsh-acgay-player"
+    "dsh-music": "link:/absolute/path/to/dsh-music"
   },
   "dsh": {
     "profile": {
-      "bundles": ["@fishcg/dsh-acgay-player"]
+      "bundles": ["dsh-music"]
     }
   }
 }
@@ -39,8 +39,8 @@ Add the package to the DSH profile and patch the profile:
 ```yaml
 # ~/.dsh/profiles/desktop/cordis.patch.yml
 - insert:
-    - id: acgay-player
-      name: '@fishcg/dsh-acgay-player'
+    - id: dsh-music
+      name: 'dsh-music'
 ```
 
 Reload DSH after adding the package. If the client half does not appear on an already-running app, restart DSH once.
@@ -61,9 +61,9 @@ The file contains the raw token, one line. Import is enabled when a non-empty to
 
 When no token is set:
 
-- `/dsh-acgay-player/state` returns `imports: false`.
+- `/dsh-music/state` returns `imports: false`.
 - Per-row import buttons and the “抓取并入库” action are hidden.
-- A direct POST to `/dsh-acgay-player/import` returns HTTP 503.
+- A direct POST to `/dsh-music/import` returns HTTP 503.
 
 Do **not** commit the token. It is a shared write credential for the acgay import endpoint.
 
@@ -81,7 +81,7 @@ Do **not** commit the token. It is a shared write credential for the acgay impor
 ## How import works
 
 1. The client asks acgay for online catalog candidates along with the normal site search.
-2. Clicking “导入”, or “抓取并入库”, calls the plugin host route `POST /dsh-acgay-player/import` with `{ query }`; a catalog item id may be sent instead.
+2. Clicking “导入”, or “抓取并入库”, calls the plugin host route `POST /dsh-music/import` with `{ query }`; a catalog item id may be sent instead.
 3. The host starts `scripts/import-one.mjs` as a short-lived child process.
 4. `scripts/import-direct.mjs` selects one candidate, downloads it, converts it to 192 kbps mp3 with ffmpeg, and POSTs a multipart request to acgay’s `/api/plugin/import` with the token.
 5. acgay writes the audio/cover to OSS, inserts a published `lab_music` row and an `lab_import_log` row, and returns the production id. The drawer navigates to `/sound/{id}`.

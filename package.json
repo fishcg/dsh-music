@@ -1,9 +1,9 @@
 {
-  "name": "@fishcg/dsh-acgay-player",
-  "version": "0.2.0",
+  "name": "dsh-music",
+  "version": "0.2.1",
   "private": false,
   "type": "module",
-  "description": "Embed acgay.cn in a DSH side drawer with search, optional auto-import, and a top mini player.",
+  "description": "Music player plugin for DeepSeek Harness with an embedded acgay panel, search and optional import.",
   "main": "index.js",
   "icon": "icon.svg",
   "exports": {
@@ -47,10 +47,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fishcg/dsh-acgay-player.git"
+    "url": "git+https://github.com/fishcg/dsh-music.git"
   },
-  "homepage": "https://github.com/fishcg/dsh-acgay-player#readme",
+  "homepage": "https://github.com/fishcg/dsh-music#readme",
   "bugs": {
-    "url": "https://github.com/fishcg/dsh-acgay-player/issues"
+    "url": "https://github.com/fishcg/dsh-music/issues"
   }
 }
