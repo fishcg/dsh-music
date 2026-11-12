@@ -25,7 +25,7 @@ const UPSTREAM = 'https://www.acgay.cn'
 const ROUTE_BASE = '/dsh-music'
 const STATE_ROUTE = `${ROUTE_BASE}/state`
 const IMPORT_ROUTE = `${ROUTE_BASE}/import`
-const VERSION = '0.2.0'
+const VERSION = '0.2.2'
 const WORKER_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'import-one.mjs')
 const NODE_BIN = process.env.DSH_ACGAY_NODE_BIN || process.execPath
 const TOKEN_ENV = 'ACGAY_IMPORT_TOKEN'
@@ -190,6 +190,21 @@ async function handleProxy(req, res) {
   }
   headers['accept-encoding'] = 'identity'
 
+  // Next.js Server Actions verify the request Origin against the host. The
+  // iframe origin is the loopback proxy, so present the upstream origin to make
+  // form actions (login/register) indistinguishable from the real site.
+  if (headers.origin) headers.origin = UPSTREAM
+  if (headers.referer) {
+    try {
+      const ref = new URL(headers.referer)
+      ref.protocol = 'https:'
+      ref.host = new URL(UPSTREAM).host
+      headers.referer = ref.toString()
+    } catch {
+      // Leave malformed referers alone.
+    }
+  }
+
   let body
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     try {
@@ -229,6 +244,12 @@ async function handleProxy(req, res) {
   if (cookies.length > 0) responseHeaders['set-cookie'] = cookies.map(stripCookieDomain)
   const location = upstream.headers.get('location')
   if (location) responseHeaders.location = rewriteLocation(location)
+  // Server Action redirects travel in this header, not in Location. Keep the
+  // iframe on the proxy origin so the follow-up request is still framed.
+  for (const headerName of ['x-action-redirect', 'x-nextjs-redirect']) {
+    const value = upstream.headers.get(headerName)
+    if (value) responseHeaders[headerName] = rewriteLocation(value)
+  }
 
   const contentType = upstream.headers.get('content-type') || ''
   if (contentType.includes('text/html')) {

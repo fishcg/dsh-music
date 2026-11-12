@@ -322,6 +322,16 @@ window.__ModuleLoader__.load({
   text-transform: uppercase;
 }
 .acgay-result-section:first-child { margin-top: 2px; }
+.acgay-result-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  color: #8a7f72;
+  font-size: 12px;
+}
+.acgay-result-pager .acgay-btn { padding: 5px 10px; font-size: 12px; }
 .acgay-search-submit {
   flex: none;
   height: 24px;
@@ -729,6 +739,9 @@ window.__ModuleLoader__.load({
       const [searchedFor, setSearchedFor] = useState('')
       const [importBusy, setImportBusy] = useState(false)
       const [biliImport, setBiliImport] = useState('')
+      const [biliPage, setBiliPage] = useState(1)
+      const [biliHasMore, setBiliHasMore] = useState(false)
+      const [biliPageBusy, setBiliPageBusy] = useState(false)
       const searchInputRef = useRef(null)
       const [importMessage, setImportMessage] = useState('')
       const [loggedIn, setLoggedIn] = useState(false)
@@ -928,9 +941,9 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const searchBiliSite = async (term) => {
+      const searchBiliSite = async (term, page = 1) => {
         const response = await fetch(
-          `${origin}/api/plugin/bili-search?q=${encodeURIComponent(term)}`,
+          `${origin}/api/plugin/bili-search?q=${encodeURIComponent(term)}&page=${page}`,
           { credentials: 'omit' },
         )
         if (!response.ok) throw new Error(`在线搜索接口不可用（${response.status}）`)
@@ -939,9 +952,14 @@ window.__ModuleLoader__.load({
           throw new Error((data && data.error) || '在线搜索接口返回异常')
         }
         const items = Array.isArray(data.items)
-          ? data.items.map(resultFromBili).filter((item) => item.bvid).slice(0, MAX_RESULTS)
+          ? data.items.map(resultFromBili).filter((item) => item.bvid)
           : []
-        return { items, total: items.length }
+        return {
+          items,
+          total: Number(data.total) || items.length,
+          page: Number(data.page) || page,
+          hasMore: Boolean(data.hasMore),
+        }
       }
 
       const submitSearch = async (event) => {
@@ -964,11 +982,13 @@ window.__ModuleLoader__.load({
 
         const [acgayResult, biliResult] = await Promise.allSettled([
           searchAcgaySite(term),
-          searchBiliSite(term),
+          searchBiliSite(term, 1),
         ])
 
         const acgay = acgayResult.status === 'fulfilled' ? acgayResult.value : { items: [], total: 0, source: 'api' }
-        const bili = biliResult.status === 'fulfilled' ? biliResult.value : { items: [], total: 0 }
+        const bili = biliResult.status === 'fulfilled' ? biliResult.value : { items: [], total: 0, page: 1, hasMore: false }
+        setBiliPage(1)
+        setBiliHasMore(Boolean(bili.hasMore))
         const biliError =
           biliResult.status === 'rejected'
             ? String((biliResult.reason && biliResult.reason.message) || biliResult.reason)
@@ -987,6 +1007,8 @@ window.__ModuleLoader__.load({
           biliTotal: bili.total,
           acgaySource: acgay.source,
           biliError,
+          biliPage: 1,
+          biliHasMore: Boolean(bili.hasMore),
         })
         setSearchBusy(false)
       }
@@ -1001,6 +1023,31 @@ window.__ModuleLoader__.load({
         setSearchedFor('')
         setSearchBusy(false)
         navigateFrame(`/sound/${item.id}`)
+      }
+
+      const loadBiliPage = async (page) => {
+        if (biliPageBusy || !searchedFor || page < 1) return
+        setBiliPageBusy(true)
+        try {
+          const bili = await searchBiliSite(searchedFor, page)
+          setBiliPage(bili.page)
+          setBiliHasMore(bili.hasMore)
+          setResults((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  bili: bili.items,
+                  biliTotal: bili.total,
+                  biliPage: bili.page,
+                  biliHasMore: bili.hasMore,
+                }
+              : prev,
+          )
+        } catch (error) {
+          setSearchError(String((error && error.message) || error))
+        } finally {
+          setBiliPageBusy(false)
+        }
       }
 
       const runImport = async () => {
@@ -1241,6 +1288,33 @@ window.__ModuleLoader__.load({
                           : h('span', { className: 'acgay-result-go' }, '导入未启用'),
                       ),
                     ),
+                    biliItems.length || biliPage > 1
+                      ? h(
+                          'div',
+                          { className: 'acgay-result-pager' },
+                          h(
+                            'button',
+                            {
+                              type: 'button',
+                              className: 'acgay-btn',
+                              disabled: biliPage <= 1 || biliPageBusy,
+                              onClick: () => loadBiliPage(biliPage - 1),
+                            },
+                            '上一页',
+                          ),
+                          h('span', null, `第 ${biliPage} 页`),
+                          h(
+                            'button',
+                            {
+                              type: 'button',
+                              className: 'acgay-btn',
+                              disabled: !biliHasMore || biliPageBusy,
+                              onClick: () => loadBiliPage(biliPage + 1),
+                            },
+                            '下一页',
+                          ),
+                        )
+                      : null,
                   )
                 : h(
                     'div',
