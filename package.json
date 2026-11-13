@@ -1,6 +1,6 @@
 {
   "name": "dsh-music",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": false,
   "type": "module",
   "description": "Music player plugin for DeepSeek Harness with an embedded acgay panel, search and optional import.",

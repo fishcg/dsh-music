@@ -25,7 +25,7 @@ const UPSTREAM = 'https://www.acgay.cn'
 const ROUTE_BASE = '/dsh-music'
 const STATE_ROUTE = `${ROUTE_BASE}/state`
 const IMPORT_ROUTE = `${ROUTE_BASE}/import`
-const VERSION = '0.2.3'
+const VERSION = '0.2.4'
 const WORKER_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'import-one.mjs')
 const NODE_BIN = process.env.DSH_ACGAY_NODE_BIN || process.execPath
 const TOKEN_ENV = 'ACGAY_IMPORT_TOKEN'
@@ -283,20 +283,33 @@ function startProxy() {
         }
       })
     })
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address()
-      const port = address && typeof address === 'object' ? address.port : 0
-      if (!port) {
-        server.close()
-        reject(new Error('cannot bind acgay proxy'))
+    const candidatePorts = [43187, 43188, 43189]
+    let candidateIndex = 0
+    const listenOnCandidate = () => {
+      const port = candidatePorts[candidateIndex]
+      server.listen(port, '127.0.0.1', () => {
+        const address = server.address()
+        const bound = address && typeof address === 'object' ? address.port : 0
+        if (!bound) {
+          server.close()
+          reject(new Error('cannot bind acgay proxy'))
+          return
+        }
+        resolve({
+          server,
+          origin: `http://127.0.0.1:${bound}`,
+        })
+      })
+    }
+    server.on('error', (error) => {
+      if (error && error.code === 'EADDRINUSE' && candidateIndex < candidatePorts.length - 1) {
+        candidateIndex += 1
+        listenOnCandidate()
         return
       }
-      resolve({
-        server,
-        origin: `http://127.0.0.1:${port}`,
-      })
+      reject(error)
     })
+    listenOnCandidate()
   }).catch((error) => {
     proxyState = null
     throw error
