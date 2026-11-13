@@ -177,6 +177,13 @@ window.__ModuleLoader__.load({
   min-width: 62px;
   text-align: right;
 }
+.acgay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482998;
+  background: transparent;
+}
+
 .acgay-drawer {
   position: fixed;
   top: 0;
@@ -858,17 +865,9 @@ window.__ModuleLoader__.load({
         const onKeyDown = (event) => {
           if (event.key === 'Escape') setOpen(false)
         }
-        const onPointerDown = (event) => {
-          const target = event.target
-          if (!(target instanceof Element)) return
-          if (target.closest('.acgay-drawer, .acgay-entry, .acgay-mini, .acgay-toast')) return
-          setOpen(false)
-        }
         window.addEventListener('keydown', onKeyDown)
-        document.addEventListener('pointerdown', onPointerDown, true)
         return () => {
           window.removeEventListener('keydown', onKeyDown)
-          document.removeEventListener('pointerdown', onPointerDown, true)
         }
       }, [open])
 
@@ -1535,8 +1534,16 @@ window.__ModuleLoader__.load({
         h(IconVinyl, null),
       )
 
+      const backdrop = open
+        ? h('div', {
+            className: 'acgay-backdrop',
+            'aria-hidden': true,
+            onClick: closeDrawer,
+          })
+        : null
+
       return ReactDOM.createPortal(
-        h(React.Fragment, null, entry, mini, drawer, importMessage ? h('div', { className: 'acgay-toast' }, importMessage) : null),
+        h(React.Fragment, null, entry, mini, backdrop, drawer, importMessage ? h('div', { className: 'acgay-toast' }, importMessage) : null),
         document.body,
       )
     }
