@@ -25,7 +25,7 @@ const UPSTREAM = 'https://www.acgay.cn'
 const ROUTE_BASE = '/dsh-music'
 const STATE_ROUTE = `${ROUTE_BASE}/state`
 const IMPORT_ROUTE = `${ROUTE_BASE}/import`
-const VERSION = '0.2.4'
+const VERSION = '0.2.5'
 const WORKER_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'import-one.mjs')
 const NODE_BIN = process.env.DSH_ACGAY_NODE_BIN || process.execPath
 const TOKEN_ENV = 'ACGAY_IMPORT_TOKEN'
@@ -34,6 +34,42 @@ const TOKEN_FILES = [
   path.join(os.homedir(), '.acgay-import-token'),
   path.join(os.homedir(), '.dsh', 'profiles', 'desktop', 'acgay-import-token'),
 ]
+
+/**
+ * Some Electron/WebKit iframe contexts drop third-party cookies even when the
+ * iframe and the DSH shell share 127.0.0.1 (different ports count as different
+ * origins for the browser's cookie partitioning heuristics). Keep a small
+ * server-side cookie jar so an acgay session created by the login Server Action
+ * is still presented on later document navigations such as /me.
+ */
+const cookieJar = new Map()
+
+function jarCookieHeader(incoming) {
+  const cookies = new Map()
+  for (const part of String(incoming || '').split(';')) {
+    const index = part.indexOf('=')
+    if (index <= 0) continue
+    const name = part.slice(0, index).trim()
+    const value = part.slice(index + 1).trim()
+    if (name) cookies.set(name, value)
+  }
+  for (const [name, value] of cookieJar) cookies.set(name, value)
+  return [...cookies].map(([name, value]) => `${name}=${value}`).join('; ')
+}
+
+function rememberSetCookies(list) {
+  for (const raw of list || []) {
+    const first = String(raw).split(';')[0]
+    const index = first.indexOf('=')
+    if (index <= 0) continue
+    const name = first.slice(0, index).trim()
+    const value = first.slice(index + 1).trim()
+    if (!name) continue
+    const lower = String(raw).toLowerCase()
+    if (!value || /max-age\s*=\s*0/.test(lower)) cookieJar.delete(name)
+    else cookieJar.set(name, value)
+  }
+}
 
 /** Resolve the optional import credential: env, plugin config, then files. */
 function resolveImportToken(config = {}) {
@@ -189,6 +225,9 @@ async function handleProxy(req, res) {
     else if (value !== undefined) headers[key] = value
   }
   headers['accept-encoding'] = 'identity'
+  const cookieHeader = jarCookieHeader(headers.cookie)
+  if (cookieHeader) headers.cookie = cookieHeader
+  else delete headers.cookie
 
   // Next.js Server Actions verify the request Origin against the host. The
   // iframe origin is the loopback proxy, so present the upstream origin to make
@@ -241,7 +280,10 @@ async function handleProxy(req, res) {
   withCors(responseHeaders)
 
   const cookies = typeof upstream.headers.getSetCookie === 'function' ? upstream.headers.getSetCookie() : []
-  if (cookies.length > 0) responseHeaders['set-cookie'] = cookies.map(stripCookieDomain)
+  if (cookies.length > 0) {
+    rememberSetCookies(cookies)
+    responseHeaders['set-cookie'] = cookies.map(stripCookieDomain)
+  }
   const location = upstream.headers.get('location')
   if (location) responseHeaders.location = rewriteLocation(location)
   // Server Action redirects travel in this header, not in Location. Keep the
