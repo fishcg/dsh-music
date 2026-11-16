@@ -25,7 +25,7 @@ const UPSTREAM = 'https://www.acgay.cn'
 const ROUTE_BASE = '/dsh-music'
 const STATE_ROUTE = `${ROUTE_BASE}/state`
 const IMPORT_ROUTE = `${ROUTE_BASE}/import`
-const VERSION = '0.2.5'
+const VERSION = '0.2.6'
 const WORKER_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'import-one.mjs')
 const NODE_BIN = process.env.DSH_ACGAY_NODE_BIN || process.execPath
 const TOKEN_ENV = 'ACGAY_IMPORT_TOKEN'
@@ -42,7 +42,34 @@ const TOKEN_FILES = [
  * server-side cookie jar so an acgay session created by the login Server Action
  * is still presented on later document navigations such as /me.
  */
-const cookieJar = new Map()
+const COOKIE_JAR_FILE = path.join(os.homedir(), '.dsh', 'dsh-music-cookies.json')
+
+function loadCookieJar() {
+  const jar = new Map()
+  try {
+    const parsed = JSON.parse(fs.readFileSync(COOKIE_JAR_FILE, 'utf8'))
+    for (const [name, value] of Object.entries(parsed || {})) {
+      if (typeof name === 'string' && typeof value === 'string' && name) jar.set(name, value)
+    }
+  } catch {
+    // No saved jar yet, or it is unreadable; start clean.
+  }
+  return jar
+}
+
+function persistCookieJar(jar) {
+  try {
+    fs.mkdirSync(path.dirname(COOKIE_JAR_FILE), { recursive: true })
+    const tmp = `${COOKIE_JAR_FILE}.${process.pid}.tmp`
+    fs.writeFileSync(tmp, JSON.stringify(Object.fromEntries(jar)), { mode: 0o600 })
+    fs.renameSync(tmp, COOKIE_JAR_FILE)
+    fs.chmodSync(COOKIE_JAR_FILE, 0o600)
+  } catch {
+    // A read-only home must not break browsing or login; the in-memory jar still works.
+  }
+}
+
+const cookieJar = loadCookieJar()
 
 function jarCookieHeader(incoming) {
   const cookies = new Map()
@@ -58,6 +85,7 @@ function jarCookieHeader(incoming) {
 }
 
 function rememberSetCookies(list) {
+  let changed = false
   for (const raw of list || []) {
     const first = String(raw).split(';')[0]
     const index = first.indexOf('=')
@@ -66,9 +94,14 @@ function rememberSetCookies(list) {
     const value = first.slice(index + 1).trim()
     if (!name) continue
     const lower = String(raw).toLowerCase()
-    if (!value || /max-age\s*=\s*0/.test(lower)) cookieJar.delete(name)
-    else cookieJar.set(name, value)
+    if (!value || /max-age\s*=\s*0/.test(lower)) {
+      if (cookieJar.delete(name)) changed = true
+    } else if (cookieJar.get(name) !== value) {
+      cookieJar.set(name, value)
+      changed = true
+    }
   }
+  if (changed) persistCookieJar(cookieJar)
 }
 
 /** Resolve the optional import credential: env, plugin config, then files. */

@@ -91,6 +91,7 @@ Nothing is written to a local MySQL database or local OSS client.
 ## Security notes
 
 - The shared import token grants upload + auto-publish permission. Never ship it in a public repository or client bundle.
+- The embedded acgay login session is kept in `~/.dsh/dsh-music-cookies.json` (mode 0600) by the loopback proxy, so a DSH restart does not force a new acgay login. It contains a session cookie, not a password. Delete the file to drop the saved session locally; the acgay session expiry still applies server-side.
 - A shared token should only be used in a trusted self-hosted setup. For multi-user deployments, use per-user tokens or a rate-limited endpoint.
 - The plugin performs no database, OSS, or catalog account authentication itself; all privileged writes happen in the acgay server endpoint.
 
