@@ -12,6 +12,8 @@ window.__ModuleLoader__.load({
     const SOURCE = 'dsh-acgay'
     const DEFAULT_PATH = '/category/music?dsh=1'
     const MAX_RESULTS = 30
+    const IS_WINDOWS = /Windows/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
+    const WIN_CLASS = IS_WINDOWS ? ' acgay-win' : ''
 
     const CSS = `
 .acgay-entry,
@@ -88,6 +90,10 @@ window.__ModuleLoader__.load({
   transition: right 230ms cubic-bezier(.22,1,.36,1), width 230ms cubic-bezier(.22,1,.36,1), opacity 180ms ease;
 }
 .acgay-mini-compact { width: min(300px, calc(100vw - var(--acgay-inset, 0px) - 280px)); }
+.acgay-entry.acgay-win { top: 48px; }
+.acgay-mini.acgay-win { top: 46px; }
+.acgay-drawer.acgay-win { top: 40px; height: calc(100% - 40px); }
+
 .acgay-mini-cover {
   width: 24px;
   height: 24px;
@@ -1127,7 +1133,7 @@ window.__ModuleLoader__.load({
         const coverStyle = current.cover ? { backgroundImage: `url("${current.cover}")` } : undefined
         return h(
           'div',
-          { className: `acgay-mini${open ? ' acgay-mini-compact' : ''}`, role: 'group', 'aria-label': 'acgay 迷你播放器' },
+          { className: `acgay-mini${open ? ' acgay-mini-compact' : ''}${WIN_CLASS}`, role: 'group', 'aria-label': 'acgay 迷你播放器' },
           h('div', { className: 'acgay-mini-cover', style: coverStyle }),
           h(
             'button',
@@ -1431,7 +1437,7 @@ window.__ModuleLoader__.load({
       const drawer = h(
             'aside',
             {
-              className: `acgay-drawer${open ? '' : ' acgay-drawer-hidden'}`,
+              className: `acgay-drawer${open ? '' : ' acgay-drawer-hidden'}${WIN_CLASS}`,
               'aria-label': 'acgay 音乐抽屉',
               'aria-hidden': !open,
             },
@@ -1526,7 +1532,7 @@ window.__ModuleLoader__.load({
         'button',
         {
           type: 'button',
-          className: `acgay-entry${player.playing ? ' acgay-entry-playing' : ''}`,
+          className: `acgay-entry${player.playing ? ' acgay-entry-playing' : ''}${WIN_CLASS}`,
           title: open ? '关闭 acgay 音乐' : player.playing ? 'acgay 音乐播放中' : '打开 acgay 音乐',
           onClick: open ? closeDrawer : openDrawer,
         },
